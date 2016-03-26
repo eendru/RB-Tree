@@ -3,35 +3,45 @@
 #include <iomanip>
 #include <iostream>
 
-struct RB_tree_s;
-
-struct RB_tree_s {
-	int key;
-	RB_tree_s *parent;
-	RB_tree_s *left;
-	RB_tree_s *right;	
+struct rb_tree_s;
+enum rb_color_e {
+	RED = 0,
+	BLACK = 1,
 };
 
-typedef RB_tree_s RB_tree_t;
-typedef RB_tree_t RB_element_t;
+struct rb_tree_s {
+	int key;
+
+	rb_tree_s *parent;
+	rb_tree_s *left;
+	rb_tree_s *right;
+
+	rb_color_e color;
+};
+
+typedef rb_tree_s rb_tree_t;
+typedef rb_tree_t rb_element_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 ///////////////////////////////////////////////////////////////////////////////
 //
-void postorder(RB_tree_t* p, int indent)
+void postorder(rb_tree_t* p, int indent)
 {
 	if(p != NULL) {
-		if(p->right) 
+		if(p->right)
 			postorder(p->right, indent + 4);
-		
-		if (indent) 
+
+		if (indent)
 			std::cout << std::setw(indent) << ' ';
-		
+
 		if (p->right)
 		    std::cout<<" /\n" << std::setw(indent) << ' ';
-		
-		std::cout<< p->key << "\n ";
+		if (p->color == RED)
+			std::cout<< p->key << "  RED"  << "\n ";
+		else
+			std::cout<< p->key << " BLACk " << "\n ";
+
 		if(p->left) {
 			std::cout << std::setw(indent) << ' ' <<" \\\n";
 			postorder(p->left, indent + 4);
@@ -41,26 +51,23 @@ void postorder(RB_tree_t* p, int indent)
 
 //
 
+rb_element_t *create_element(int k) {
 
-
-
-RB_element_t *create_element(int k) {
-	
-	RB_element_t *element = (RB_tree_t*) malloc(sizeof(RB_tree_s));
+	rb_element_t *element = (rb_tree_t*) malloc(sizeof(rb_tree_s));
 
 	element->key = k;
 	element->parent = NULL;
 	element->left = NULL;
 	element->right = NULL;
+	element->color = RED;
 
 	return element;
 }
 
-void insert_to_tree(RB_tree_t *T, int k) {
-	RB_element_t *z = create_element(k);
+void insert_to_tree(rb_tree_t *T, rb_element_t *z) {
 
-	RB_element_t *y = NULL;
-	RB_element_t *x = T;
+	rb_element_t *y = NULL;
+	rb_element_t *x = T;
 
 	while (x != NULL) {
 		y = x;
@@ -80,17 +87,120 @@ void insert_to_tree(RB_tree_t *T, int k) {
 			y->right = z;
 }
 
+void rb_left_rotate(rb_tree_t *T, rb_element_t *x) {
 
-RB_tree_t *create_binary_tree(int *A, size_t N) {
-	RB_tree_t *result;
+	if (x->right != NULL) {
+		rb_element_t *y;
+		y = x->right;
+		x->right = y->left;
+
+		if (y->left != NULL)
+			y->left->parent = x;
+		y->parent = x->parent;
+
+		if(x->parent == NULL)
+			T = y;
+		else {
+			if (x == x->parent->left)
+				x->parent->left = y;
+			else
+				x->parent->right = y;
+		}
+
+		y->left = x;
+		x->parent - y;
+	}
+}
+
+void rb_right_rotate(rb_tree_t *T, rb_element_t *y) {
+	if (y->left != NULL) {
+		rb_element_t *x;
+		x = y->left;
+		y->left = x->right;
+
+		if (x->right != NULL)
+			x->right->parent = y;
+		x->parent = y->parent;
+		if (y->parent == NULL)
+			T = x;
+		else {
+			if (y == y->parent->left)
+				y->parent->left = x;
+			else
+				y->parent->right = x;
+		}
+		x->right = y;
+		y->parent = x;
+	}
+}
+
+void rb_insert(rb_tree_t *T, rb_element_t *x) {
+	insert_to_tree(T, x);
+	x->color = RED;
+	rb_element_t *y;
+	rb_tree_t *t = T;
+
+	while ((x != t) && (x->parent->color = RED)) {
+		if (x->parent != NULL &&
+		    x->parent->parent != NULL &&
+		    x->parent == x->parent->parent->left
+		   )
+		{
+			y = x->parent->parent->right;
+			if (y != NULL && y->color == RED) {
+				x->parent->color = BLACK;
+				y->color = BLACK;
+				x->parent->parent->color = RED;
+				x = x->parent->parent;
+			}
+			else {
+				if (x == x->parent->right) {
+					x = x->parent;
+					rb_left_rotate(T, x);
+				}
+				x->parent->color = BLACK;
+				x->parent->parent->color = RED;
+				rb_right_rotate(T, x->parent->parent);
+			}
+		}
+		else {
+			if (x->parent != NULL && x->parent->parent != NULL) {
+				y = x->parent->parent->left;
+				if (y != NULL && y->color == RED) {
+					x->parent->color = BLACK;
+					y->color = BLACK;
+					x->parent->parent->color = RED;
+					x = x->parent->parent;
+				}
+				else {
+					if (x == x->parent->left) {
+						x = x->parent;
+						rb_right_rotate(T, x);
+					}
+					x->parent->color = RED;
+					x->parent->parent->color = RED;
+					rb_left_rotate(T, x->parent->parent);
+				}
+			}
+		}
+	}
+
+	T->color = BLACK;
+
+}
+
+rb_tree_t *create_binary_tree(int *A, size_t N) {
+	rb_tree_t *result;
 	if (N == 0 || A == NULL)
 		return NULL;
 
 	result = create_element(A[0]);
+	result->color = BLACK;
 
 	int i = 0;
 	for (i = 0; i < N; ++i) {
-		insert_to_tree(result, A[i]);		
+		rb_element_t *x = create_element(A[i]);
+		rb_insert(result, x);
 	}
 
 	return result;

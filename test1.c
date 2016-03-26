@@ -3,7 +3,7 @@
 
 int main() {
 
-    	size_t N = 12;
+	size_t N = 12;
 	int i = 0;
 	int A[N] = {0};
 	srand(time(NULL));
@@ -12,8 +12,8 @@ int main() {
 		std::cout << A[i] << " ";
 	}
 	std::cout << "\n";
-	
-	RB_tree_t *r = create_binary_tree(A, N);
+
+	rb_tree_t *r = create_binary_tree(A, N);
 	postorder(r, 0);
 
 	return 0;

@@ -22,9 +22,6 @@ struct rb_tree_s {
 typedef rb_tree_s rb_tree_t;
 typedef rb_tree_t rb_element_t;
 
-///////////////////////////////////////////////////////////////////////////////
-//
-///////////////////////////////////////////////////////////////////////////////
 //
 void postorder(rb_tree_t* p, int indent)
 {
@@ -48,7 +45,6 @@ void postorder(rb_tree_t* p, int indent)
 		}
 	}
 }
-
 //
 
 rb_element_t *create_element(int k) {
@@ -64,7 +60,7 @@ rb_element_t *create_element(int k) {
 	return element;
 }
 
-void insert_to_tree(rb_tree_t *T, rb_element_t *z) {
+rb_tree_t *insert_to_tree(rb_tree_t *T, rb_element_t *z) {
 
 	rb_element_t *y = NULL;
 	rb_element_t *x = T;
@@ -85,66 +81,68 @@ void insert_to_tree(rb_tree_t *T, rb_element_t *z) {
 			y->left = z;
 		else
 			y->right = z;
+	return T;
 }
 
-void rb_left_rotate(rb_tree_t *T, rb_element_t *x) {
+rb_tree_t *rb_left_rotate(rb_tree_t *T, rb_element_t *x) {
 
-	if (x->right != NULL) {
-		rb_element_t *y;
-		y = x->right;
-		x->right = y->left;
-
-		if (y->left != NULL)
-			y->left->parent = x;
-		y->parent = x->parent;
-
-		if(x->parent == NULL)
-			T = y;
-		else {
-			if (x == x->parent->left)
-				x->parent->left = y;
-			else
-				x->parent->right = y;
-		}
-
-		y->left = x;
-		x->parent - y;
-	}
-}
-
-void rb_right_rotate(rb_tree_t *T, rb_element_t *y) {
-	if (y->left != NULL) {
-		rb_element_t *x;
-		x = y->left;
-		y->left = x->right;
-
-		if (x->right != NULL)
-			x->right->parent = y;
-		x->parent = y->parent;
-		if (y->parent == NULL)
-			T = x;
-		else {
-			if (y == y->parent->left)
-				y->parent->left = x;
-			else
-				y->parent->right = x;
-		}
-		x->right = y;
-		y->parent = x;
-	}
-}
-
-void rb_insert(rb_tree_t *T, rb_element_t *x) {
-	insert_to_tree(T, x);
-	x->color = RED;
 	rb_element_t *y;
+	y = x->right;
+	x->right = y->left;
+
+	if (y->left != NULL)
+		y->left->parent = x;
+	y->parent = x->parent;
+
+	if(x->parent == NULL) {
+		T = y;
+	}
+	else {
+		if (x == x->parent->left)
+			x->parent->left = y;
+		else
+			x->parent->right = y;
+	}
+
+	y->left = x;
+	x->parent = y;
+
+	return T;
+}
+
+rb_tree_t *rb_right_rotate(rb_tree_t *T, rb_element_t *y) {
+
+	rb_element_t *x;
+	x = y->left;
+	y->left = x->right;
+
+	if (x->right != NULL)
+		x->right->parent = y;
+
+	x->parent = y->parent;
+	if (y->parent == NULL){
+		T = x;
+	}
+	else {
+		if (y == y->parent->left)
+			y->parent->left = x;
+		else
+			y->parent->right = x;
+	}
+	x->right = y;
+	y->parent = x;
+
+	return T;
+}
+
+rb_tree_t *rb_insert(rb_tree_t *T, rb_element_t *x) {
+	T = insert_to_tree(T, x);
+	rb_element_t *y = NULL;
 	rb_tree_t *t = T;
 
-	while ((x != t) && (x->parent->color = RED)) {
-		if (x->parent != NULL &&
-		    x->parent->parent != NULL &&
-		    x->parent == x->parent->parent->left
-		   )
+	while ((x != T) && (x->parent->color == RED)) {
+
+		if(x->parent == x->parent->parent->left)
 		{
 			y = x->parent->parent->right;
 			if (y != NULL && y->color == RED) {
@@ -156,15 +154,14 @@ void rb_insert(rb_tree_t *T, rb_element_t *x) {
 			else {
 				if (x == x->parent->right) {
 					x = x->parent;
-					rb_left_rotate(T, x);
+					T = rb_left_rotate(T, x);
 				}
 				x->parent->color = BLACK;
 				x->parent->parent->color = RED;
-				rb_right_rotate(T, x->parent->parent);
+				T = rb_right_rotate(T, x->parent->parent);
 			}
 		}
 		else {
-			if (x->parent != NULL && x->parent->parent != NULL) {
 				y = x->parent->parent->left;
 				if (y != NULL && y->color == RED) {
 					x->parent->color = BLACK;
@@ -175,32 +172,35 @@ void rb_insert(rb_tree_t *T, rb_element_t *x) {
 				else {
 					if (x == x->parent->left) {
 						x = x->parent;
-						rb_right_rotate(T, x);
+						T = rb_right_rotate(T, x);
 					}
-					x->parent->color = RED;
+					x->parent->color = BLACK;
 					x->parent->parent->color = RED;
-					rb_left_rotate(T, x->parent->parent);
+					T = rb_left_rotate(T, x->parent->parent);
 				}
-			}
 		}
 	}
 
 	T->color = BLACK;
-
+	return T;
 }
 
 rb_tree_t *create_binary_tree(int *A, size_t N) {
 	rb_tree_t *result;
-	if (N == 0 || A == NULL)
-		return NULL;
+	int B[N] = {1, 6, 5, 10, 12, 11, 1, 12, 1, 2, 9, 6};
+
+//	if (N == 0 || A == NULL)
+//		return NULL;
 
 	result = create_element(A[0]);
 	result->color = BLACK;
+	result->parent = 0;
 
-	int i = 0;
-	for (i = 0; i < N; ++i) {
+
+	int i = 1;
+	for (i = 1; i < N; ++i) {
 		rb_element_t *x = create_element(A[i]);
-		rb_insert(result, x);
+		result = rb_insert(result, x);
 	}
 
 	return result;
